@@ -1,0 +1,167 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>StanQuest</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var config = {
+    type: Phaser.AUTO,
+    width: 1280,
+    height: 720,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 300 },
+            debug: false
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+var stans = 0.000000000001; //initial picostan
+var stanExpression;
+var stanText;
+var stanCollectAmount =  0.000000000001;
+
+var bumbler;
+var playerBumbler;
+var bumblerBurden = false;
+var burdenTest;
+
+var flowerLoad;
+var hiveHole;
+
+var cursors;
+var bumblerVelocityMod = 1;
+
+var game = new Phaser.Game(config);
+
+function preload ()
+{
+    this.load.image('background', 'assets/background.png');
+    this.load.image('button', 'assets/button.png');
+    this.load.image('flower', 'assets/flower.png');
+    this.load.image('tree', 'assets/tree.png');
+    this.load.image('stanbar', 'assets/stanbar.png');
+    this.load.spritesheet('bumblerImage', 'assets/bumblersprites.png', { frameWidth: 62, frameHeight: 50 });
+}
+
+function create ()
+{
+
+    // Set the stage
+    this.add.image(0,0, 'background').setOrigin(0,0);
+    this.add.image(0,0, 'tree').setOrigin(0,0);
+    this.add.image(995,160, 'flower').setOrigin(0,0);
+    
+    // Stan counter setup
+    this.add.image(0,0, 'stanbar').setOrigin(0,0);
+    // set the stan number to a nice 12 digit comma seperated string
+    stanExpression = Number(stans).toFixed(12).replace(/0{3}/g, "$&,");
+    stanText = this.add.text(16,8, stanExpression + ' stans', {font: '64px Arial', fill: '#000;' });
+
+    burdenTest = this.add.text(1100, 16, bumblerBurden.toString(), {font: '64px Arial', fill: '#000;' });
+
+    // moveable bumbler setup
+    playerBumbler = this.physics.add.sprite(475, 275, 'bumblerImage');
+    playerBumbler.setBounce(0.2);
+    playerBumbler.setCollideWorldBounds(true);
+    playerBumbler.setGravityY(-300);
+
+    // animations for the bumbler
+    this.anims.create({
+        key: 'right',
+        frames: this.anims.generateFrameNumbers('bumblerImage', { start: 0, end: 1 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'turn',
+        frames: [ { key: 'bumblerImage', frame: 1 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'left',
+        frames: this.anims.generateFrameNumbers('bumblerImage', { start: 2, end: 3 }),
+        frameRate: 5,
+        repeat: -1
+    });
+    // input for player
+    cursors = this.input.keyboard.createCursorKeys();
+
+    hiveHole = this.physics.add.staticGroup();
+    hiveHole.create(475, 275, 'bumblerImage').setScale(0.5).refreshBody();
+    this.physics.add.overlap(playerBumbler, hiveHole, depositStan, null, this);
+
+    flowerLoad = this.physics.add.staticGroup();
+    flowerLoad.create(1122, 275, 'bumblerImage').setScale(0.5).refreshBody();
+    this.physics.add.overlap(playerBumbler, flowerLoad, collectStan, null, this);
+
+
+}
+
+
+function update ()
+{
+    if (cursors.left.isDown)
+    {
+        playerBumbler.setVelocityX(-160 * bumblerVelocityMod);
+        playerBumbler.anims.play('left', true);
+    }
+    else if (cursors.right.isDown)
+    {
+        playerBumbler.setVelocityX(160 * bumblerVelocityMod);
+        playerBumbler.anims.play('right', true);
+    }
+    else
+    {
+        playerBumbler.setVelocityX(0);
+    }
+
+}
+
+function collectStan (playerBumbler, flowerLoad)
+{
+    playerBumbler.setTint(0xfdfd00);
+    bumblerBurden = true;
+    burdenTest.setText(bumblerBurden.toString());
+}
+
+function depositStan (playerBumbler, hiveHole)
+{
+    if(bumblerBurden)
+    {
+        bumblerBurden = false;
+        stans += stanCollectAmount;
+        stanUpdate(stans);
+        burdenTest.setText(bumblerBurden.toString());
+        playerBumbler.clearTint();
+    }
+}
+
+function stanUpdate(stans)
+{
+    stanExpression = Number(stans).toFixed(12).replace(/0{3}/g, "$&,");
+    stanText.setText(stanExpression + ' stans');
+}
+
+</script>
+
+</body>
+</html>
